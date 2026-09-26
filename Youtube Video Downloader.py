@@ -23,8 +23,24 @@ def get_yt_dlp_executable():
 
 def get_download_root():
     if os.name == "nt":
+        import winreg
+        from pathlib import Path
+        sub_key = r"Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+        downloads_guid = "{374DE290-123F-4565-9164-39C4925E467B}"
+        try:
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, sub_key) as key:
+                location, _ = winreg.QueryValueEx(key, downloads_guid)
+                return location
+        except Exception:
+            return str(Path.home() / "Downloads")
+    else:
+        xdg_bin = shutil.which('xdg-user-dir')
+        if xdg_bin:
+            result = subprocess.run([xdg_bin, 'DOWNLOAD'], capture_output=True, text=True)
+            downloads_path = result.stdout.strip()
+            if downloads_path:
+                return downloads_path
         return os.path.join(os.path.expanduser("~"), "Downloads")
-    return os.path.join(os.path.expanduser("~"), "Downloads")
 
 def extract_caption_link(metadata, lang="en", ext="srv3"):
     try:
